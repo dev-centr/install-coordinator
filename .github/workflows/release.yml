@@ -14,14 +14,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            cli: install-coordinator-linux-amd64
-            gui: install-coordinator-gui-linux-amd64
+            asset: install-coordinator-linux-amd64
           - os: windows-latest
-            cli: install-coordinator-windows-amd64.exe
-            gui: install-coordinator-gui-windows-amd64.exe
+            asset: install-coordinator-windows-amd64.exe
           - os: macos-latest
-            cli: install-coordinator-macos-amd64
-            gui: install-coordinator-gui-macos-amd64
+            asset: install-coordinator-macos-amd64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -29,21 +26,21 @@ jobs:
         with:
           compiler: ldc-latest
       - run: dub build --config=application --build=release
-      - run: dub build --config=gui --build=release
-      - name: Rename artifacts
+      - name: Package
         shell: bash
         run: |
+          mkdir -p dist/install-coordinator
           if [ "${{ runner.os }}" = "Windows" ]; then
-            mv install-coordinator.exe "${{ matrix.cli }}"
-            mv install-coordinator-gui.exe "${{ matrix.gui }}"
+            cp install-coordinator.exe dist/install-coordinator/
+            cp -r assets dist/install-coordinator/ 2>/dev/null || true
+            (cd dist && zip -r ../${{ matrix.asset }}.zip install-coordinator)
           else
-            mv install-coordinator "${{ matrix.cli }}"
-            mv install-coordinator-gui "${{ matrix.gui }}"
-            chmod +x "${{ matrix.cli }}" "${{ matrix.gui }}"
+            cp install-coordinator dist/install-coordinator/
+            cp -r assets dist/install-coordinator/ 2>/dev/null || true
+            tar -czf ${{ matrix.asset }}.tar.gz -C dist install-coordinator
           fi
       - uses: softprops/action-gh-release@v2
         with:
           files: |
-            ${{ matrix.cli }}
-            ${{ matrix.gui }}
+            ${{ matrix.asset }}.*
           generate_release_notes: true

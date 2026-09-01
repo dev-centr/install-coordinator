@@ -54,7 +54,7 @@ int runStub(string[] args)
     writeln("Submitted ", job.displayName, " (", id, ")");
     writeln("Open Install Coordinator to configure, queue, and track installs:");
     writeln("  http://127.0.0.1:", defaultHttpPort(), "/ui");
-    writeln("  install-coordinator gui   (native UI, dub --config=gui)");
+    writeln("  install-coordinator gui");
     if ("job" in resp && resp["job"]["state"].str == "collecting")
     {
         writeln("Job is collecting options — commit terms/scope in the GUI or:");

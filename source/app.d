@@ -22,7 +22,7 @@ int main(string[] args)
     auto cmd = args[1].toLower;
     try
     {
-        final switch (cmd)
+        switch (cmd)
         {
         case "--version":
         case "version":
@@ -31,9 +31,14 @@ int main(string[] args)
         case "daemon":
             return runDaemonMain();
         case "gui":
-            stderr.writeln("GUI is built separately: install-coordinator-gui (dub run --config=gui)");
-            stderr.writeln("Or: dub run --config=gui -- install-coordinator-gui");
-            return ensureDaemonStarted() == 0 ? 0 : 1;
+            if (ensureDaemonStarted() != 0)
+                return 1;
+            import installcoordinator.http : defaultHttpPort;
+            import std.process : browse;
+            auto url = "http://127.0.0.1:" ~ defaultHttpPort().to!string ~ "/ui";
+            writeln("Opening ", url);
+            browse(url);
+            return 0;
         case "submit":
         case "stub":
             return runStub(args[2 .. $]);
@@ -58,9 +63,10 @@ int main(string[] args)
         case "--help":
         case "-h":
             return usage();
+        default:
+            stderr.writeln("Unknown command: ", args[1]);
+            return usage();
         }
-        stderr.writeln("Unknown command: ", args[1]);
-        return usage();
     }
     catch (Exception e)
     {

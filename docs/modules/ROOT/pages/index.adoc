@@ -1,48 +1,33 @@
 = Install Coordinator
-:page-orig-author: agent on behalf of user
-:page-last-author: agent on behalf of user
-:page-audience: developers, packagers
-:page-usage-context: reference
+:description: Daemon and web UI that serialize MSI installs, queue jobs from thin stubs, and batch admin scope for GUI reinstall workflows.
+:navtitle: Install Coordinator
 
-Install Coordinator is the Dev-Centr answer to coarse Windows install locking: collect options in parallel, commit through one daemon, serialize MSI execute steps, and reuse session elevation for batch GUI installs.
+Install Coordinator is a Dev-Centr desktop service for **GUI-first reinstall workflows** when winget is not enough and raw EXE installers fight over `_MSIExecute`.
 
-== Commands
+== What it does
 
-[cols="1,2"]
-|===
-| Command | Purpose
+* **Thin stub by default** — `install-coordinator submit manifest.json` registers a job and exits; the daemon owns the queue.
+* **State machine** — `collecting` → `ready` → `queued` → `blocked` / `executing` → `done` | `failed` | `cancelled`.
+* **MSI lane** — waits on `Global\_MSIExecute`, runs `msiexec` steps serially; non-MSI steps run when path claims do not conflict.
+* **Web UI** — `install-coordinator gui` opens `http://127.0.0.1:17420/ui` (queue, history catalog, batch scope, session elevation lock).
+* **Session batching** — lock admin approval for the daemon session; default per-user vs per-machine scope; org policy batch flag.
+* **Presentation modes** — `thinStub` (default), `detachedCollect` (reserved), `embeddedQueue` (discouraged).
 
-| `daemon`
-| Background service (pipe IPC + HTTP UI)
+== Quick start
 
-| `submit <manifest.json>`
-| Thin stub — queue and exit
-
-| `session --lock-elevation --batch-terms`
-| Lock admin approval for daemon lifetime
-
-| `list`, `status`, `commit`, `cancel`
-| CLI control without opening UI
-|===
-
-== Manifest sketch
-
-[source,json]
+[source,shell]
 ----
-{
-  "displayName": "My App",
-  "presentation": "thinStub",
-  "scope": "perUser",
-  "claims": { "msi": true, "paths": ["${ProgramFiles}/MyApp/**"] },
-  "steps": [
-    { "kind": "msiexec", "path": "MyApp.msi", "args": ["/passive", "/norestart"] }
-  ]
-}
+install-coordinator daemon
+install-coordinator new-manifest "My App" C:/path/to/setup.msi my-app.json
+install-coordinator submit my-app.json
+install-coordinator gui
 ----
 
-See link:https://github.com/dev-centr/install-coordinator/tree/main/examples[examples/] in the repo.
+== UniGetUI
+
+Package managers like UniGetUI can still install many apps; Install Coordinator helps when users double-click several EXE/MSI installers and hit error 1618. Future integration: register completed catalog entries as relaunch shortcuts (Desktop / Start Menu via CLI today).
 
 == Related
 
-* link:https://devcentr.org/news/2026-08-29-when-unrelated-installers-still-queue[When unrelated installers still queue] — design essay
-* link:https://github.com/dev-centr/easy-installer[Ibex / Easy Installer] — project authoring
+* link:https://github.com/dev-centr/easy-installer[Ibex / Easy Installer] — project authoring and plugin emit
+* link:https://devcentr.org/news/2026-08-29-when-unrelated-installers-still-queue[Essay: When unrelated installers still queue]

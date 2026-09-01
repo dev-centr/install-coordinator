@@ -8,6 +8,7 @@
 	"targetName": "install-coordinator",
 	"sourcePaths": ["source"],
 	"importPaths": ["source"],
+	"copyFiles": ["assets/ui/"],
 	"dependencies": {
 		"arsd-official": "~>11.5.3"
 	},
@@ -21,19 +22,7 @@
 		{
 			"name": "library",
 			"targetType": "library",
-			"excludedSourceFiles": ["source/app.d", "source/app_gui.d"]
-		},
-		{
-			"name": "gui",
-			"targetType": "executable",
-			"targetName": "install-coordinator-gui",
-			"mainSourceFile": "source/app_gui.d",
-			"dependencies": {
-				"dlangui": {
-					"repository": "git+https://github.com/dlang-supplemental/dlangui.git",
-					"version": "457ffb3c856bedba5fdcf481fc0d787e4c9c1da3"
-				}
-			}
+			"excludedSourceFiles": ["source/app.d", "source/app_gui.d", "source/installcoordinator/gui/host.d"]
 		}
 	]
 }

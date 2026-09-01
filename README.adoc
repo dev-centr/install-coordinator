@@ -1,42 +1,47 @@
 = Install Coordinator
-:description: Windows install daemon — thin stub, MSI serialization, session elevation lock, web and native UI.
 
-Install Coordinator queues GUI-driven installs, serializes MSI work through `_MSIExecute`, and exposes one session for batch admin approval. It complements link:https://github.com/dev-centr/easy-installer[Ibex / Easy Installer] and winget/UniGetUI workflows: stubs submit jobs; the daemon owns the queue.
+D daemon and web UI for **serialized MSI work** and **batch GUI installs** — thin stub by default, unified queue in the browser.
 
-== Binaries
+## Why
 
-* `install-coordinator` — CLI + daemon (`daemon`, `submit`, `list`, `session`, …)
-* `install-coordinator-gui` — dlangui shell (`dub run --config=gui`)
-* Web UI — `http://127.0.0.1:17420/ui` (started with the daemon)
+Windows blocks parallel MSI sessions via `_MSIExecute`. GUI users double-click installers and get error 1618. Install Coordinator collects jobs, explains waits, and runs MSI steps one at a time while allowing disjoint work in parallel when claims permit.
 
-== Quick start
+## Commands
 
-[source,powershell]
-----
-install-coordinator daemon
-install-coordinator submit examples\demo.install.json
-start http://127.0.0.1:17420/ui
-----
-
-Session lock (batch elevation / org policy):
-
-[source,powershell]
-----
+```powershell
+install-coordinator daemon          # background service + http://127.0.0.1:17420/ui
+install-coordinator submit app.json # thin stub (default)
+install-coordinator gui             # open web UI
+install-coordinator list active
 install-coordinator session --lock-elevation --batch-terms --scope=perMachine
-----
+install-coordinator shortcut <id> --desktop
+```
 
-== Presentation modes
+## Manifest (minimal)
 
-| Mode | Behavior |
-|======|==========|
-| `thinStub` (default) | Submit manifest, exit; user commits in coordinator UI |
-| `detachedCollect` | Per-app collect UI, then hand off (reserved) |
-| `embeddedQueue` | Discouraged — client keeps its own queue window |
+```json
+{
+  "displayName": "My App",
+  "presentation": "thinStub",
+  "termsAccepted": true,
+  "scope": "perUser",
+  "claims": { "msi": true },
+  "steps": [
+    { "kind": "msiexec", "path": "C:/setup.msi", "args": ["/passive"] }
+  ]
+}
+```
 
-== State machine
+## Build
 
-`collecting` → `ready` → `queued` → (`blocked` ↔ `queued`) → `executing` → `done` | `failed` | `cancelled`
+```powershell
+dub build --config=application
+```
 
-== Docs
+## Docs
 
-Antora component under `docs/` (hub: link:https://docs.devcentr.org/[docs.devcentr.org] when wired).
+https://docs.devcentr.org/install-coordinator/latest/index.html (after hub wire)
+
+Essay context: https://devcentr.org/news/2026-08-29-when-unrelated-installers-still-queue
+
+MIT · Dev-Centr

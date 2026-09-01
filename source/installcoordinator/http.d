@@ -174,7 +174,7 @@ private void handleHttpClient(Socket client, InstallScheduler scheduler, ushort 
             {
                 auto j = parseJSON(body);
                 if ("installForAllUsers" in j)
-                    line["defaultScope"] = JSONValue(j["installForAllUsers"].boolean ? "perMachine" : "perUser");
+                    line["defaultScope"] = JSONValue(j["installForAllUsers"].type == JSONType.true_ ? "perMachine" : "perUser");
                 if ("orgPolicyAccepted" in j)
                     line["batchTermsReady"] = j["orgPolicyAccepted"];
                 if ("grantElevation" in j)
@@ -182,7 +182,7 @@ private void handleHttpClient(Socket client, InstallScheduler scheduler, ushort 
                     line["grantElevation"] = j["grantElevation"];
                     line["elevationMode"] = JSONValue("lockedForSession");
                 }
-                if ("lockElevationUntilClose" in j && j["lockElevationUntilClose"].boolean)
+                if ("lockElevationUntilClose" in j && j["lockElevationUntilClose"].type == JSONType.true_)
                     line["elevationMode"] = JSONValue("lockedForSession");
             }
             out_ = parseJSON(handleRequest(scheduler, line.toString()));

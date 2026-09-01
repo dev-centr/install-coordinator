@@ -17,7 +17,5 @@ jobs:
       - uses: dlang-community/setup-dlang@v1
         with:
           compiler: ldc-latest
-      - name: Build CLI
+      - name: Build
         run: dub build --config=application --build=release
-      - name: Build GUI
-        run: dub build --config=gui --build=release

@@ -6,7 +6,6 @@ import installcoordinator.paths;
 import installcoordinator.shortcuts;
 import installcoordinator.types;
 import installcoordinator.versioninfo;
-import std.array : array;
 import std.conv : to;
 import std.file : thisExePath;
 import std.json;
@@ -14,38 +13,36 @@ import std.string : split;
 
 class CoordinatorFrame : Widget
 {
-    StringListWidget queueList;
-    StringListWidget historyList;
-    EditBox detailEdit;
+    ListView queueList;
+    ListView historyList;
+    TextEdit detailEdit;
     CheckBox lockElevation;
     CheckBox batchTerms;
     ComboBox scopeCombo;
     string selectedJobId;
-    string[] queueLines;
-    string[] historyLines;
 
     this()
     {
         ensureDaemonStarted();
         auto topBar = new HorizontalLayout;
-        lockElevation = new CheckBox("lock", "Lock admin for session");
-        batchTerms = new CheckBox("batch", "Batch policy acceptance");
-        scopeCombo = new ComboBox("scope");
+        lockElevation = new CheckBox("Lock admin for session");
+        batchTerms = new CheckBox("Batch policy acceptance");
+        scopeCombo = new ComboBox;
         scopeCombo.items.add("perUser");
         scopeCombo.items.add("perMachine");
-        auto installAll = new Button("installAll", "Install all ready");
-        auto refresh = new Button("refresh", "Refresh");
+        auto installAll = new Button("Install all ready");
+        auto refresh = new Button("Refresh");
         topBar.addChild(lockElevation);
         topBar.addChild(batchTerms);
         topBar.addChild(scopeCombo);
         topBar.addChild(installAll);
         topBar.addChild(refresh);
 
-        queueList = new StringListWidget("queue");
+        queueList = new ListView;
         queueList.preferredWidth = 320;
-        historyList = new StringListWidget("history");
+        historyList = new ListView;
         historyList.preferredWidth = 320;
-        detailEdit = new EditBox("detail");
+        detailEdit = new TextEdit;
         detailEdit.readOnly = true;
         detailEdit.multiline = true;
 
@@ -55,23 +52,18 @@ class CoordinatorFrame : Widget
         lists.addChild(detailEdit, 1);
 
         auto actions = new HorizontalLayout;
-        auto pinDesktop = new Button("pinDesk", "Pin to Desktop");
-        auto pinStart = new Button("pinStart", "Add to Start Menu");
+        auto pinDesktop = new Button("Pin to Desktop");
+        auto pinStart = new Button("Add to Start Menu");
         actions.addChild(pinDesktop);
         actions.addChild(pinStart);
 
-        auto title = new TextWidget("title");
-        title.text = aboutLine();
         auto mainLayout = new VerticalLayout;
+        auto title = new TextWidget(aboutLine());
         mainLayout.addChild(title);
         version (Windows)
         {
             if (!isElevated())
-            {
-                auto elev = new TextWidget("elev");
-                elev.text = "Run elevated to lock admin for session.";
-                mainLayout.addChild(elev);
-            }
+                mainLayout.addChild(new TextWidget("Run elevated to lock admin for session."));
         }
         mainLayout.addChild(topBar);
         mainLayout.addChild(lists, 1);
@@ -82,11 +74,13 @@ class CoordinatorFrame : Widget
         refresh.onClick = delegate(Widget) { refreshLists(); };
         lockElevation.onClick = delegate(Widget) { pushSession(); };
         batchTerms.onClick = delegate(Widget) { pushSession(); };
-        queueList.itemSelected = delegate(ListWidget, ListWidgetItem item, int index) {
-            pickLine(queueLines, index);
+        queueList.onItemSelected = delegate(int index) {
+            if (index >= 0 && index < cast(int) queueList.items.length)
+                selectJob(queueList.items[index].split("\t")[0]);
         };
-        historyList.itemSelected = delegate(ListWidget, ListWidgetItem item, int index) {
-            pickLine(historyLines, index);
+        historyList.onItemSelected = delegate(int index) {
+            if (index >= 0 && index < cast(int) historyList.items.length)
+                selectJob(historyList.items[index].split("\t")[0]);
         };
         pinDesktop.onClick = delegate(Widget) { createSelectedShortcut(ShortcutKind.desktop); };
         pinStart.onClick = delegate(Widget) { createSelectedShortcut(ShortcutKind.startMenu); };
@@ -95,17 +89,10 @@ class CoordinatorFrame : Widget
         refreshLists();
     }
 
-    void pickLine(string[] lines, int index)
-    {
-        if (index < 0 || index >= cast(int) lines.length)
-            return;
-        selectJob(lines[index].split("\t")[0]);
-    }
-
     void refreshLists()
     {
-        queueLines = [];
-        historyLines = [];
+        queueList.items.clear;
+        historyList.items.clear;
         try
         {
             JSONValue pf = JSONValue.emptyObject;
@@ -113,15 +100,15 @@ class CoordinatorFrame : Widget
             auto active = callDaemon("list", pf);
             if ("jobs" in active)
                 foreach (j; active["jobs"].array)
-                    queueLines ~= formatJobLine(j);
+                    queueList.items ~= formatJobLine(j);
             JSONValue hf = JSONValue.emptyObject;
             hf["filter"] = JSONValue("history");
             auto hist = callDaemon("list", hf);
             if ("jobs" in hist)
                 foreach (j; hist["jobs"].array)
-                    historyLines ~= formatJobLine(j);
-            queueList.items = queueLines.map!(l => l.to!dstring).array;
-            historyList.items = historyLines.map!(l => l.to!dstring).array;
+                    historyList.items ~= formatJobLine(j);
+            queueList.updateItems();
+            historyList.updateItems();
         }
         catch (Exception e)
         {
@@ -192,5 +179,3 @@ class CoordinatorFrame : Widget
         writeln(createShortcut(job["displayName"].str, thisExePath(), manifest, kind));
     }
 }
-
-import std.algorithm : map;
