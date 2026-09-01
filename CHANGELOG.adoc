@@ -1,0 +1,11 @@
+= Changelog
+
+== Unreleased
+
+=== Added
+
+* D daemon with named-pipe IPC, HTTP UI on port 17420, and optional dlangui front-end.
+* Job state machine: collecting → ready → queued → executing (with blocked/retry for `_MSIExecute`).
+* Thin stub default (`install-coordinator submit`); session flags for locked elevation and batch terms.
+* MSI lane mutex wait, per-machine scope, install history, Windows desktop/start-menu shortcuts.
+* Example manifests: `examples/demo.install.json`, `examples/sample-msi.json`.

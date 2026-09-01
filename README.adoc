@@ -1,0 +1,42 @@
+= Install Coordinator
+:description: Windows install daemon — thin stub, MSI serialization, session elevation lock, web and native UI.
+
+Install Coordinator queues GUI-driven installs, serializes MSI work through `_MSIExecute`, and exposes one session for batch admin approval. It complements link:https://github.com/dev-centr/easy-installer[Ibex / Easy Installer] and winget/UniGetUI workflows: stubs submit jobs; the daemon owns the queue.
+
+== Binaries
+
+* `install-coordinator` — CLI + daemon (`daemon`, `submit`, `list`, `session`, …)
+* `install-coordinator-gui` — dlangui shell (`dub run --config=gui`)
+* Web UI — `http://127.0.0.1:17420/ui` (started with the daemon)
+
+== Quick start
+
+[source,powershell]
+----
+install-coordinator daemon
+install-coordinator submit examples\demo.install.json
+start http://127.0.0.1:17420/ui
+----
+
+Session lock (batch elevation / org policy):
+
+[source,powershell]
+----
+install-coordinator session --lock-elevation --batch-terms --scope=perMachine
+----
+
+== Presentation modes
+
+| Mode | Behavior |
+|======|==========|
+| `thinStub` (default) | Submit manifest, exit; user commits in coordinator UI |
+| `detachedCollect` | Per-app collect UI, then hand off (reserved) |
+| `embeddedQueue` | Discouraged — client keeps its own queue window |
+
+== State machine
+
+`collecting` → `ready` → `queued` → (`blocked` ↔ `queued`) → `executing` → `done` | `failed` | `cancelled`
+
+== Docs
+
+Antora component under `docs/` (hub: link:https://docs.devcentr.org/[docs.devcentr.org] when wired).

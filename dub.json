@@ -1,0 +1,39 @@
+{
+	"name": "install-coordinator",
+	"description": "Install Coordinator — daemon, queue, and GUI for serialized MSI work and batch installs.",
+	"homepage": "https://github.com/dev-centr/install-coordinator",
+	"authors": ["DevCentr"],
+	"license": "MIT",
+	"targetType": "executable",
+	"targetName": "install-coordinator",
+	"sourcePaths": ["source"],
+	"importPaths": ["source"],
+	"dependencies": {
+		"arsd-official": "~>11.5.3"
+	},
+	"configurations": [
+		{
+			"name": "application",
+			"targetType": "executable",
+			"mainSourceFile": "source/app.d",
+			"excludedSourceFiles": ["source/app_gui.d", "source/installcoordinator/gui/host.d"]
+		},
+		{
+			"name": "library",
+			"targetType": "library",
+			"excludedSourceFiles": ["source/app.d", "source/app_gui.d"]
+		},
+		{
+			"name": "gui",
+			"targetType": "executable",
+			"targetName": "install-coordinator-gui",
+			"mainSourceFile": "source/app_gui.d",
+			"dependencies": {
+				"dlangui": {
+					"repository": "git+https://github.com/dlang-supplemental/dlangui.git",
+					"version": "457ffb3c856bedba5fdcf481fc0d787e4c9c1da3"
+				}
+			}
+		}
+	]
+}
