@@ -1,0 +1,14 @@
+{
+  "displayName": "Demo Application",
+  "publisher": "DevCentr",
+  "version": "1.0.0",
+  "uxMode": "thin-stub",
+  "steps": [
+    {
+      "kind": "shell",
+      "argv": ["cmd", "/c", "echo", "Install Coordinator demo step"],
+      "needsMsiLane": false
+    }
+  ],
+  "pathClaims": ["${ProgramFiles}/DemoApp/**"]
+}

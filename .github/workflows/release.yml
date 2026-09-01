@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            cli: install-coordinator-linux-amd64
+            gui: install-coordinator-gui-linux-amd64
+          - os: windows-latest
+            cli: install-coordinator-windows-amd64.exe
+            gui: install-coordinator-gui-windows-amd64.exe
+          - os: macos-latest
+            cli: install-coordinator-macos-amd64
+            gui: install-coordinator-gui-macos-amd64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: ldc-latest
+      - run: dub build --config=application --build=release
+      - run: dub build --config=gui --build=release
+      - name: Rename artifacts
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            mv install-coordinator.exe "${{ matrix.cli }}"
+            mv install-coordinator-gui.exe "${{ matrix.gui }}"
+          else
+            mv install-coordinator "${{ matrix.cli }}"
+            mv install-coordinator-gui "${{ matrix.gui }}"
+            chmod +x "${{ matrix.cli }}" "${{ matrix.gui }}"
+          fi
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ matrix.cli }}
+            ${{ matrix.gui }}
+          generate_release_notes: true

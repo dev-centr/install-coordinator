@@ -1,0 +1,48 @@
+= Install Coordinator
+:page-orig-author: agent on behalf of user
+:page-last-author: agent on behalf of user
+:page-audience: developers, packagers
+:page-usage-context: reference
+
+Install Coordinator is the Dev-Centr answer to coarse Windows install locking: collect options in parallel, commit through one daemon, serialize MSI execute steps, and reuse session elevation for batch GUI installs.
+
+== Commands
+
+[cols="1,2"]
+|===
+| Command | Purpose
+
+| `daemon`
+| Background service (pipe IPC + HTTP UI)
+
+| `submit <manifest.json>`
+| Thin stub — queue and exit
+
+| `session --lock-elevation --batch-terms`
+| Lock admin approval for daemon lifetime
+
+| `list`, `status`, `commit`, `cancel`
+| CLI control without opening UI
+|===
+
+== Manifest sketch
+
+[source,json]
+----
+{
+  "displayName": "My App",
+  "presentation": "thinStub",
+  "scope": "perUser",
+  "claims": { "msi": true, "paths": ["${ProgramFiles}/MyApp/**"] },
+  "steps": [
+    { "kind": "msiexec", "path": "MyApp.msi", "args": ["/passive", "/norestart"] }
+  ]
+}
+----
+
+See link:https://github.com/dev-centr/install-coordinator/tree/main/examples[examples/] in the repo.
+
+== Related
+
+* link:https://devcentr.org/news/2026-08-29-when-unrelated-installers-still-queue[When unrelated installers still queue] — design essay
+* link:https://github.com/dev-centr/easy-installer[Ibex / Easy Installer] — project authoring

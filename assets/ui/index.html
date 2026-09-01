@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Install Coordinator</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #5b9fd4;
+      --ok: #3d9970;
+      --warn: #e6b450;
+      --err: #d45b5b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 1.25rem;
+      line-height: 1.45;
+    }
+    h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 0.25rem; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.25rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    section {
+      background: var(--panel);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      border: 1px solid #2a3548;
+    }
+    section h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 0.75rem; }
+    label { display: flex; align-items: center; gap: 0.5rem; margin: 0.4rem 0; cursor: pointer; }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.45rem 0.85rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-right: 0.4rem;
+      margin-top: 0.35rem;
+    }
+    button.secondary { background: #3a4a62; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li.job, li.cat {
+      border: 1px solid #2a3548;
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+    li.job:hover, li.cat:hover { border-color: var(--accent); }
+    li.selected { outline: 2px solid var(--accent); }
+    .state { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .state.executing { color: var(--accent); }
+    .state.done { color: var(--ok); }
+    .state.failed, .state.blocked { color: var(--err); }
+    .state.queued, .state.collect { color: var(--warn); }
+    .detail { margin-top: 1rem; font-size: 0.88rem; }
+    pre.log { background: #0a0e14; padding: 0.6rem; border-radius: 6px; overflow: auto; max-height: 160px; font-size: 0.78rem; }
+    .bar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+    #msiFlag { font-size: 0.85rem; color: var(--warn); }
+  </style>
+</head>
+<body>
+  <h1>Install Coordinator</h1>
+  <p class="sub">Queue installs, batch session prefs, serialize MSI work. Thin stubs submit here; you commit when ready.</p>
+  <div class="bar">
+    <button type="button" id="refreshBtn">Refresh</button>
+    <button type="button" id="installAllBtn" class="secondary">Install all ready</button>
+    <span id="msiFlag"></span>
+  </div>
+  <div class="grid">
+    <section>
+      <h2>Session</h2>
+      <label><input type="checkbox" id="allUsers" /> Install for all users (per machine)</label>
+      <label><input type="checkbox" id="orgPolicy" /> I may install software on this device</label>
+      <label><input type="checkbox" id="lockElev" checked /> Lock elevation until I close this window</label>
+      <label><input type="checkbox" id="deferReboot" checked /> Defer reboots until queue finishes</label>
+      <button type="button" id="grantElevBtn">Grant admin for this session</button>
+    </section>
+    <section>
+      <h2>Active queue</h2>
+      <ul id="jobList"></ul>
+    </section>
+    <section style="grid-column: 1 / -1;">
+      <h2>Install catalog</h2>
+      <p class="sub" style="margin-top:0">Recent installs — reinstall, pin shortcuts, drag <code>.lnk</code> from Desktop after creating.</p>
+      <ul id="catList"></ul>
+    </section>
+    <section style="grid-column: 1 / -1;" id="detailPanel" class="detail">
+      <h2>Selected job</h2>
+      <div id="detailBody">Select a job to configure.</div>
+    </section>
+  </div>
+  <script>
+    const API = "";
+    let selectedId = null;
+
+    async function api(path, opts) {
+      const r = await fetch(API + path, opts);
+      if (!r.ok) throw new Error(await r.text());
+      const t = r.headers.get("content-type") || "";
+      if (t.includes("json")) return r.json();
+      return r.text();
+    }
+
+    async function refresh() {
+      const st = await api("/status");
+      document.getElementById("msiFlag").textContent = st.msiBusy
+        ? "Windows Installer busy (_MSIExecute) — MSI steps queue"
+        : "MSI lane idle";
+      const sess = st.session;
+      document.getElementById("allUsers").checked = !!sess.installForAllUsers;
+      document.getElementById("orgPolicy").checked = !!sess.orgPolicyAccepted;
+      document.getElementById("lockElev").checked = sess.lockElevationUntilClose !== false;
+      document.getElementById("deferReboot").checked = sess.deferReboot !== false;
+
+      const jobs = (await api("/jobs")).jobs || [];
+      const ul = document.getElementById("jobList");
+      ul.innerHTML = "";
+      jobs.sort((a,b) => (a.submittedAt || "").localeCompare(b.submittedAt || ""));
+      for (const j of jobs) {
+        const li = document.createElement("li");
+        li.className = "job" + (j.id === selectedId ? " selected" : "");
+        li.innerHTML = `<strong>${esc(j.displayName || j.id)}</strong>
+          <span class="state ${j.state}">${j.state}</span>
+          ${j.statusMessage ? `<div class="sub">${esc(j.statusMessage)}</div>` : ""}`;
+        li.onclick = () => { selectedId = j.id; showDetail(j); refresh(); };
+        ul.appendChild(li);
+      }
+
+      const cat = (await api("/catalog")).catalog || [];
+      const cul = document.getElementById("catList");
+      cul.innerHTML = "";
+      for (const c of cat) {
+        const li = document.createElement("li");
+        li.className = "cat";
+        li.innerHTML = `<strong>${esc(c.displayName || c.id)}</strong> <span class="sub">${esc(c.id)}</span>`;
+        const row = document.createElement("div");
+        const cid = encodeURIComponent(c.id);
+        const b1 = btn("Reinstall", () => post(`/jobs/submit`, { displayName: c.displayName, presentation: "thinStub", steps: c.steps, claims: c.claims, termsAccepted: true }));
+        const b2 = btn("Desktop shortcut", () => shortcut(c.id, "desktop"));
+        const b3 = btn("Start menu", () => shortcut(c.id, "startmenu"));
+        row.append(b1, b2, b3);
+        li.appendChild(row);
+        cul.appendChild(li);
+      }
+    }
+
+    function btn(label, fn) {
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.className = "secondary";
+      b.type = "button";
+      b.onclick = (e) => { e.stopPropagation(); fn(); };
+      return b;
+    }
+
+    function esc(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+    }
+
+    function showDetail(j) {
+      const el = document.getElementById("detailBody");
+      el.innerHTML = `
+        <p><strong>${esc(j.displayName)}</strong> v${esc(j.version || "")} · ${esc(j.publisher || "")}</p>
+        <p>Presentation: ${esc(j.presentation || "thinStub")} · ID: <code>${esc(j.id)}</code></p>
+        <label><input type="checkbox" id="terms" ${j.termsAccepted ? "checked" : ""} /> I accept this product's license terms</label>
+        <div>
+          <button type="button" id="saveCfg">Save</button>
+          <button type="button" id="commitBtn">Commit to queue</button>
+          <button type="button" id="cancelBtn" class="secondary">Cancel</button>
+        </div>
+        ${j.errorMessage ? `<pre class="log">${esc(j.errorMessage)}</pre>` : ""}`;
+      document.getElementById("saveCfg").onclick = async () => {
+        await post(`/jobs/${j.id}/configure`, { termsAccepted: document.getElementById("terms").checked });
+        refresh();
+      };
+      document.getElementById("commitBtn").onclick = async () => {
+        await post(`/jobs/${j.id}/configure`, { termsAccepted: document.getElementById("terms").checked });
+        await post(`/jobs/${j.id}/commit`, {});
+        refresh();
+      };
+      document.getElementById("cancelBtn").onclick = async () => {
+        await post(`/jobs/${j.id}/cancel`, {});
+        selectedId = null;
+        refresh();
+      };
+    }
+
+    async function post(path, body) {
+      await api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+      await refresh();
+    }
+
+    async function shortcut(jobId, target) {
+      await post(`/jobs/${encodeURIComponent(jobId)}/shortcut`, { target });
+    }
+
+    async function saveSession(extra) {
+      await post("/session", {
+        installForAllUsers: document.getElementById("allUsers").checked,
+        orgPolicyAccepted: document.getElementById("orgPolicy").checked,
+        lockElevationUntilClose: document.getElementById("lockElev").checked,
+        deferReboot: document.getElementById("deferReboot").checked,
+        ...extra
+      });
+    }
+
+    document.getElementById("refreshBtn").onclick = refresh;
+    document.getElementById("grantElevBtn").onclick = () => saveSession({ grantElevation: true });
+    ["allUsers","orgPolicy","lockElev","deferReboot"].forEach(id => {
+      document.getElementById(id).onchange = () => saveSession({});
+    });
+    document.getElementById("installAllBtn").onclick = async () => {
+      const jobs = (await api("/jobs")).jobs || [];
+      for (const j of jobs) {
+        if (j.state === "collecting" || j.state === "queued") {
+          if (!j.termsAccepted) continue;
+          await post(`/jobs/${j.id}/commit`, {});
+        }
+      }
+    };
+
+    refresh();
+    setInterval(refresh, 3000);
+  </script>
+</body>
+</html>

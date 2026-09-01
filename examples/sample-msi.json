@@ -1,0 +1,22 @@
+{
+  "displayName": "Sample Application",
+  "publisher": "Example Corp",
+  "version": "1.0.0",
+  "presentation": "thinStub",
+  "termsAccepted": true,
+  "scope": "perUser",
+  "claims": {
+    "msi": true,
+    "paths": ["${ProgramFiles}/SampleApp/**"]
+  },
+  "steps": [
+    {
+      "kind": "msiexec",
+      "path": "C:/path/to/sample.msi",
+      "args": ["/passive", "/norestart"]
+    }
+  ],
+  "options": {
+    "installDir": "C:/Program Files/SampleApp"
+  }
+}
