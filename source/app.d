@@ -29,16 +29,13 @@ int main(string[] args)
             writeln(aboutLine());
             return 0;
         case "daemon":
-            return runDaemonMain();
+            return cmdDaemon(args[2 .. $]);
         case "gui":
             if (ensureDaemonStarted() != 0)
                 return 1;
-            import installcoordinator.http : defaultHttpPort;
-            import std.process : browse;
-            auto url = "http://127.0.0.1:" ~ defaultHttpPort().to!string ~ "/ui";
-            writeln("Opening ", url);
-            browse(url);
-            return 0;
+            import installcoordinator.http_config : defaultPortFromEnv;
+            import installcoordinator.local_shell : openUserShell;
+            return openUserShell(defaultPortFromEnv());
         case "submit":
         case "stub":
             return runStub(args[2 .. $]);
@@ -80,9 +77,9 @@ int usage()
     writeln(aboutLine());
     writeln(`
 Commands:
-  daemon                     Run background coordinator (serializes MSI / claims)
-  submit <manifest.json>     Thin stub — queue job and exit (default UX)
-  gui                        Open GUI (build with --config=gui)
+  daemon [--remote] [--bind=HOST] [--auth-token=TOKEN] [--port=N]
+                             Background service + HTTP surfaces
+  gui                        Open local user app window (not a browser tab)
   list [active|history|all]  List jobs
   status <job-id>            Job detail
   commit <job-id> [--terms] [--scope=perUser|perMachine]
@@ -254,3 +251,25 @@ int cmdNewManifest(string[] args)
 }
 
 import std.algorithm : startsWith;
+import installcoordinator.http_config;
+
+int cmdDaemon(string[] args)
+{
+    auto config = HttpConfig.fromEnvironment();
+    bool remoteFlag;
+    string bindOverride;
+    string tokenOverride;
+    foreach (a; args)
+    {
+        if (a == "--remote")
+            remoteFlag = true;
+        else if (a.startsWith("--bind="))
+            bindOverride = a[7 .. $];
+        else if (a.startsWith("--auth-token="))
+            tokenOverride = a[13 .. $];
+        else if (a.startsWith("--port="))
+            config.port = cast(ushort) to!int(a[7 .. $]);
+    }
+    config.applyFlags(bindOverride, tokenOverride, remoteFlag);
+    return runDaemonMain(config);
+}

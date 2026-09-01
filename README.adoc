@@ -1,21 +1,29 @@
 = Install Coordinator
 
-D daemon and web UI for **serialized MSI work** and **batch GUI installs** — thin stub by default, unified queue in the browser.
+D daemon with **two surfaces**: a local lay-user app window and an admin remote-control HTTP API.
 
 ## Why
 
 Windows blocks parallel MSI sessions via `_MSIExecute`. GUI users double-click installers and get error 1618. Install Coordinator collects jobs, explains waits, and runs MSI steps one at a time while allowing disjoint work in parallel when claims permit.
 
+## Surfaces
+
+* **User (local)** — `install-coordinator gui` opens a framed app window at `/ui/user`. Plain language, no admin jargon. Localhost only.
+* **Admin (remote-capable)** — JSON API + `/ui/admin` for operators. Bind beyond loopback with `--remote --auth-token=…`; remote clients send `Authorization: Bearer <token>`.
+
 ## Commands
 
 ```powershell
-install-coordinator daemon          # background service + http://127.0.0.1:17420/ui
+install-coordinator daemon          # localhost HTTP on :17420
+install-coordinator daemon --remote --auth-token=SECRET   # LAN/admin remote control
 install-coordinator submit app.json # thin stub (default)
-install-coordinator gui             # open web UI
+install-coordinator gui             # local user app window
 install-coordinator list active
 install-coordinator session --lock-elevation --batch-terms --scope=perMachine
 install-coordinator shortcut <id> --desktop
 ```
+
+Environment: `INSTALL_COORD_BIND`, `INSTALL_COORD_AUTH_TOKEN`, `INSTALL_COORD_REMOTE=1`, `INSTALL_COORD_HTTP_PORT`.
 
 ## Manifest (minimal)
 

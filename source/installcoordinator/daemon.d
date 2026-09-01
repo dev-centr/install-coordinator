@@ -2,6 +2,7 @@ module installcoordinator.daemon;
 
 import installcoordinator.client;
 import installcoordinator.http;
+import installcoordinator.http_config;
 import installcoordinator.ipc;
 import installcoordinator.paths;
 import installcoordinator.scheduler;
@@ -21,12 +22,12 @@ final class CoordinatorDaemon
     InstallScheduler scheduler;
     shared bool stopHttp;
 
-    this()
+    this(HttpConfig httpConfig)
     {
         scheduler = new InstallScheduler();
         scheduler.start();
         stopHttp = false;
-        startHttpThread(scheduler, defaultHttpPort(), &stopHttp);
+        startHttpThread(scheduler, httpConfig, &stopHttp);
     }
 
     void shutdown()
@@ -142,9 +143,10 @@ private int runUnixSocketServer()
     }
 }
 
-int runDaemonMain()
+int runDaemonMain(HttpConfig config)
 {
-    gDaemon = new CoordinatorDaemon();
+    config.validate();
+    gDaemon = new CoordinatorDaemon(config);
     return gDaemon.runForever();
 }
 

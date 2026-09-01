@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Installs</title>
+  <link rel="stylesheet" href="/ui/shared.css" />
+</head>
+<body data-surface="user">
+  <header>
+    <h1>Installs</h1>
+    <div class="strip">
+      <label><input type="checkbox" id="lockElev" /> Remember admin approval this session</label>
+      <label>Install for
+        <select id="scope">
+          <option value="perUser">Just me</option>
+          <option value="perMachine">Everyone on this PC</option>
+        </select>
+      </label>
+      <button id="installAll">Install ready items</button>
+      <button class="secondary" id="refresh">Refresh</button>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>Waiting & running</h2>
+      <div class="list" id="queue"></div>
+    </section>
+    <section>
+      <h2>Recent</h2>
+      <div class="list" id="history"></div>
+    </section>
+    <section>
+      <h2>Status</h2>
+      <pre id="detail">Select an install…</pre>
+      <div class="actions">
+        <button class="secondary" id="pinDesktop" disabled>Shortcut to Desktop</button>
+        <button class="secondary" id="pinStart" disabled>Add to Start menu</button>
+        <button class="secondary" id="cancelJob" disabled>Cancel</button>
+      </div>
+    </section>
+    <footer id="status">Connecting…</footer>
+  </main>
+  <script src="/ui/app.js"></script>
+  <script>bootSurface('user');</script>
+</body>
+</html>

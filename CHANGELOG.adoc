@@ -3,5 +3,6 @@
 == v0.1.0 (unreleased)
 
 * Initial daemon, job state machine, MSI serialization lane, named-pipe IPC, HTTP API + web UI.
+* Two surfaces: local user app window (`/ui/user`) and admin remote control (`/ui/admin` + JSON API with Bearer auth when non-local).
 * Thin stub submit flow, session elevation lock, batch scope/terms, install history catalog.
-* Windows shortcuts for catalog relaunch (Desktop / Start Menu).
+* Windows shortcuts for catalog relaunch (Desktop / Start Menu) via UI and CLI.

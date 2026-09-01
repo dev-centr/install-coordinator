@@ -1,5 +1,5 @@
 = Install Coordinator
-:description: Daemon and web UI that serialize MSI installs, queue jobs from thin stubs, and batch admin scope for GUI reinstall workflows.
+:description: Daemon with local user app + admin remote control — serializes MSI installs and queues jobs from thin stubs.
 :navtitle: Install Coordinator
 
 Install Coordinator is a Dev-Centr desktop service for **GUI-first reinstall workflows** when winget is not enough and raw EXE installers fight over `_MSIExecute`.
@@ -9,7 +9,9 @@ Install Coordinator is a Dev-Centr desktop service for **GUI-first reinstall wor
 * **Thin stub by default** — `install-coordinator submit manifest.json` registers a job and exits; the daemon owns the queue.
 * **State machine** — `collecting` → `ready` → `queued` → `blocked` / `executing` → `done` | `failed` | `cancelled`.
 * **MSI lane** — waits on `Global\_MSIExecute`, runs `msiexec` steps serially; non-MSI steps run when path claims do not conflict.
-* **Web UI** — `install-coordinator gui` opens `http://127.0.0.1:17420/ui` (queue, history catalog, batch scope, session elevation lock).
+* **Two surfaces**
+** **User (local)** — `install-coordinator gui` opens a framed app window (`/ui/user`). Friendly labels; blocked from remote IPs.
+** **Admin (remote-capable)** — JSON API + `/ui/admin`. Localhost is open; non-local clients need `Authorization: Bearer <token>` when bound beyond loopback.
 * **Session batching** — lock admin approval for the daemon session; default per-user vs per-machine scope; org policy batch flag.
 * **Presentation modes** — `thinStub` (default), `detachedCollect` (reserved), `embeddedQueue` (discouraged).
 
@@ -23,9 +25,18 @@ install-coordinator submit my-app.json
 install-coordinator gui
 ----
 
+== Remote admin
+
+[source,shell]
+----
+install-coordinator daemon --remote --auth-token=YOUR_SECRET
+# From another machine:
+curl -H "Authorization: Bearer YOUR_SECRET" http://HOST:17420/jobs
+----
+
 == UniGetUI
 
-Package managers like UniGetUI can still install many apps; Install Coordinator helps when users double-click several EXE/MSI installers and hit error 1618. Future integration: register completed catalog entries as relaunch shortcuts (Desktop / Start Menu via CLI today).
+Package managers like UniGetUI can still install many apps; Install Coordinator helps when users double-click several EXE/MSI installers and hit error 1618. Desktop / Start Menu shortcuts work from the user UI or CLI.
 
 == Related
 

@@ -53,7 +53,8 @@ int runStub(string[] args)
     writeln(aboutLine());
     writeln("Submitted ", job.displayName, " (", id, ")");
     writeln("Open Install Coordinator to configure, queue, and track installs:");
-    writeln("  http://127.0.0.1:", defaultHttpPort(), "/ui");
+    import installcoordinator.http_config : defaultPortFromEnv;
+    writeln("  http://127.0.0.1:", defaultPortFromEnv(), "/ui/user");
     writeln("  install-coordinator gui");
     if ("job" in resp && resp["job"]["state"].str == "collecting")
     {
