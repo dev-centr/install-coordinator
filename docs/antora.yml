@@ -1,6 +1,5 @@
-name: install-coordinator
-title: Install Coordinator
-version: master
-start_page: ROOT:index.adoc
+﻿name: tools
+title: Tools
+version: ~
 nav:
-  - modules/ROOT/nav.adoc
+- modules/install-coordinator/nav.adoc
