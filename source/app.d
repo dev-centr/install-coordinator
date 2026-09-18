@@ -8,6 +8,7 @@ import installcoordinator.store;
 import installcoordinator.stub;
 import installcoordinator.types;
 import installcoordinator.versioninfo;
+import installcoordinator.uil_cli;
 import std.conv : to;
 import std.file : exists, readText, write;
 import std.json;
@@ -56,6 +57,8 @@ int main(string[] args)
             return cmdShortcut(args[2 .. $]);
         case "new-manifest":
             return cmdNewManifest(args[2 .. $]);
+        case "uil":
+            return cmdUil(args[2 .. $]);
         case "help":
         case "--help":
         case "-h":
@@ -87,6 +90,7 @@ Commands:
   session [--lock-elevation] [--scope=perMachine] [--batch-terms]
   shortcut <job-id> --desktop|--start-menu
   new-manifest <name> <msi-path> [out.json]
+  uil validate|plan|emit-coordinator <manifest.uil.json>
   ping                       Daemon health check
 
 Presentation modes (manifest field presentation):

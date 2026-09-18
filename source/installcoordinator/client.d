@@ -76,14 +76,15 @@ private string pipeRoundTripUnix(string line)
     if (!exists(sockPath))
         throw new Exception("daemon socket missing — run install-coordinator daemon");
     auto addr = new UnixAddress(sockPath);
-    auto sock = socket(PF_LOCAL, SocketType.STREAM, 0);
+    auto sock = new Socket(AddressFamily.UNIX, SocketType.STREAM);
     scope (exit) sock.close();
     sock.connect(addr);
     line ~= "\n";
     sock.send(line);
     char[65536] buf;
     auto n = sock.receive(buf);
-    return cast(string) buf[0 .. n].strip();
+    string s = cast(string) buf[0 .. n].idup;
+    return s.strip();
 }
 
 bool daemonRunning()

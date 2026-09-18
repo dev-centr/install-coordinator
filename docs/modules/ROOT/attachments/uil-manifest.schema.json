@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docs.devcentr.org/install-coordinator/latest/uil-manifest.schema.json",
+  "title": "Unity Install Layout (UIL) manifest",
+  "description": "DevCentr layout contract for Install Coordinator and Ibex emit targets. Works with classic path adapters today; maps to connectome-fs node kinds later.",
+  "type": "object",
+  "required": ["uilVersion", "package", "layout", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "uilVersion": {
+      "type": "string",
+      "const": "1.0",
+      "description": "UIL contract revision."
+    },
+    "package": { "$ref": "#/$defs/packageIdentity" },
+    "layout": { "$ref": "#/$defs/layout" },
+    "payload": { "$ref": "#/$defs/payload" },
+    "claims": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/claim" },
+      "default": []
+    },
+    "lifecycle": { "$ref": "#/$defs/lifecycle" },
+    "journal": { "$ref": "#/$defs/journalSpec" },
+    "coordinator": { "$ref": "#/$defs/coordinatorBridge" }
+  },
+  "$defs": {
+    "packageIdentity": {
+      "type": "object",
+      "required": ["id", "name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable package id (reverse-DNS or GUID-backed id in connectome-fs)."
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "publisher": { "type": "string" },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Semantic or product version string."
+        },
+        "edition": {
+          "type": "string",
+          "default": "default",
+          "description": "Edition slot for side-by-side (e.g. default, pro, lts)."
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "required": ["adapter"],
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "type": "string",
+          "enum": ["classic-paths", "connectome-fs"],
+          "description": "classic-paths resolves FHS / Windows / macOS roots; connectome-fs is reserved for graph-native storage."
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["perUser", "perMachine"],
+          "default": "perUser"
+        },
+        "platformFamily": {
+          "type": "string",
+          "enum": ["windows", "macos", "linux", "bsd", "auto"],
+          "default": "auto",
+          "description": "When auto, the runtime picks the host OS family."
+        },
+        "sideBySide": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "slot": {
+              "type": "string",
+              "description": "Version or edition slot directory name when side-by-side is enabled."
+            }
+          }
+        },
+        "installRoot": {
+          "type": "string",
+          "description": "Optional explicit install root override (classic-paths only)."
+        }
+      }
+    },
+    "payloadRole": {
+      "type": "string",
+      "enum": ["bin", "lib", "share", "state", "cache", "config", "logs"]
+    },
+    "payloadEntry": {
+      "type": "object",
+      "required": ["source", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Staging path relative to manifest directory or absolute path."
+        },
+        "role": { "$ref": "#/$defs/payloadRole" },
+        "relativePath": {
+          "type": "string",
+          "description": "Path under the role root inside the install prefix."
+        }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "required": ["entries"],
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/payloadEntry" }
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["path_entry", "start_menu", "file_assoc", "service", "driver", "env"]
+        },
+        "id": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "path_entry" } } },
+          "then": {
+            "required": ["directories"],
+            "properties": {
+              "directories": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "prepend": { "type": "boolean", "default": true }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "start_menu" } } },
+          "then": {
+            "required": ["shortcut"],
+            "properties": {
+              "shortcut": {
+                "type": "object",
+                "required": ["name", "targetRole", "targetRelative"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "targetRole": { "$ref": "#/$defs/payloadRole" },
+                  "targetRelative": { "type": "string" },
+                  "arguments": { "type": "string" },
+                  "iconRole": { "$ref": "#/$defs/payloadRole" },
+                  "iconRelative": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "file_assoc" } } },
+          "then": {
+            "required": ["extension", "progid"],
+            "properties": {
+              "extension": { "type": "string" },
+              "progid": { "type": "string" },
+              "openCommandRole": { "$ref": "#/$defs/payloadRole" },
+              "openCommandRelative": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "service" } } },
+          "then": {
+            "required": ["serviceName"],
+            "properties": {
+              "serviceName": { "type": "string" },
+              "displayName": { "type": "string" },
+              "executableRole": { "$ref": "#/$defs/payloadRole" },
+              "executableRelative": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "driver" } } },
+          "then": {
+            "required": ["infRole", "infRelative"],
+            "properties": {
+              "infRole": { "$ref": "#/$defs/payloadRole" },
+              "infRelative": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "env" } } },
+          "then": {
+            "required": ["variables"],
+            "properties": {
+              "scope": { "type": "string", "enum": ["user", "machine", "process"] },
+              "variables": {
+                "type": "object",
+                "additionalProperties": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repair": {
+          "type": "object",
+          "properties": {
+            "strategy": {
+              "type": "string",
+              "enum": ["reconcile-payload", "msi-repair", "custom"],
+              "default": "reconcile-payload"
+            },
+            "notes": { "type": "string" }
+          }
+        },
+        "uninstall": {
+          "type": "object",
+          "properties": {
+            "strategy": {
+              "type": "string",
+              "enum": ["remove-payload-and-claims", "msi-uninstall", "custom"],
+              "default": "remove-payload-and-claims"
+            },
+            "removeState": { "type": "boolean", "default": false },
+            "removeCache": { "type": "boolean", "default": true }
+          }
+        }
+      }
+    },
+    "journalSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "type": "string",
+          "const": "uil-journal-v1"
+        },
+        "persistPath": {
+          "type": "string",
+          "description": "Where the apply journal is written under the state role."
+        }
+      }
+    },
+    "coordinatorBridge": {
+      "type": "object",
+      "description": "Optional handoff to Install Coordinator queue plane.",
+      "additionalProperties": false,
+      "properties": {
+        "presentation": {
+          "type": "string",
+          "enum": ["thinStub", "detachedCollect", "embeddedQueue"]
+        },
+        "termsAccepted": { "type": "boolean" },
+        "options": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    }
+  }
+}

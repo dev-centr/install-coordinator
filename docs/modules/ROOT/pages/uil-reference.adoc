@@ -1,0 +1,101 @@
+= Unity Install Layout (UIL) reference
+:description: JSON manifest contract for package layout, claims, journal, repair, and uninstall.
+:navtitle: UIL reference
+
+UIL version `1.0` is the first stable contract between Ibex emitters and Install Coordinator.
+
+Machine-readable schema: xref:attachment$uil-manifest.schema.json[uil-manifest.schema.json] (source in the repo at `docs/schema/`).
+
+== Top-level document
+
+[cols="1,3"]
+|===
+| Field | Purpose
+
+| `uilVersion`
+| Must be `"1.0"`.
+
+| `package`
+| Identity: `id`, `name`, `version`, optional `publisher`, `edition`.
+
+| `layout`
+| `adapter` (`classic-paths` \| `connectome-fs`), `scope`, `platformFamily`, optional `sideBySide`, `installRoot`.
+
+| `payload.entries[]`
+| Staged `source` files mapped into role roots with optional `relativePath`.
+
+| `claims[]`
+| Orientation / integration: `path_entry`, `start_menu`, `file_assoc`, `service`, `driver`, `env`.
+
+| `lifecycle`
+| `repair` and `uninstall` strategies.
+
+| `journal`
+| Transaction log format (`uil-journal-v1`) and optional persist path under the state role.
+
+| `coordinator`
+| Bridge fields for thin-stub jobs (`presentation`, `termsAccepted`, `options`).
+|===
+
+== Payload roles
+
+Classic adapters map roles to install-prefix subtrees (FHS-like on Unix, `Program Files` / `%LOCALAPPDATA%\Programs` on Windows, `~/Applications` or `/Library` on macOS):
+
+* `bin` — executables (PATH claims usually target this root)
+* `lib` — private libraries
+* `share` — read-only assets, documentation
+* `state` — mutable application state, journals
+* `cache` — regenerable cache
+* `config` — configuration files
+* `logs` — log output
+
+== Claims and shell refresh
+
+Installs must update discoverability, not only copy bytes:
+
+* `path_entry` — directories prepended or appended to PATH (or platform equivalent).
+* `start_menu` — shortcut metadata pointing at a `bin` payload relative path.
+* `file_assoc` — extension ↔ handler binding.
+* `service` / `driver` — OS service or driver registration (planned apply).
+* `env` — user/machine/process environment variables (often referencing `${prefix}`).
+
+Token expansion in claim paths:
+
+* `${prefix}` / `${installRoot}` — resolved install prefix for the plan.
+* `${role:bin}` (and other roles) — resolved role root from the classic adapter.
+
+== Side-by-side and editions
+
+`package.edition` names a product edition (default, pro, lts). When `layout.sideBySide.enabled` is true, `layout.sideBySide.slot` (often the version string) becomes an extra directory under the prefix so multiple versions coexist.
+
+== Lifecycle
+
+[cols="1,2"]
+|===
+| Strategy | Meaning
+
+| `reconcile-payload` (repair)
+| Re-apply payload entries and refresh claims from the journal.
+
+| `remove-payload-and-claims` (uninstall)
+| Reverse journal operations; optional retention of `state` vs `cache` via flags.
+|===
+
+MSI-specific `msi-repair` / `msi-uninstall` strategies exist for hybrid packages that still route through `msiexec` on the queue plane.
+
+== Transaction journal
+
+Journal records are ordered `mkdir`, `copy`, claim operations, with rollback counterparts (`remove`, claim undo). The D library builds this journal during `uil plan` and prints it in dry-run mode until the apply engine lands.
+
+== Classic path adapters
+
+| OS family | per-user prefix (default) | per-machine prefix (default)
+| Windows | `%LOCALAPPDATA%\Programs\<id>\<slot>` | `%ProgramFiles%\<id>\<slot>`
+| macOS | `~/Applications/<id>/<slot>` | `/Library/Application Support/<id>/<slot>`
+| Linux / BSD | `~/.local/opt/<id>/<slot>` | `/opt/<id>/<slot>`
+
+Override any prefix with `layout.installRoot`.
+
+== Connectome-fs (forward)
+
+See xref:connectome-fs.adoc[Connectome-fs adapter notes]. Author manifests with `classic-paths` today; the same logical roles and claims map to GUID nodes without changing Ibex emit shape.

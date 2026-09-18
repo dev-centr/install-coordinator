@@ -1,0 +1,23 @@
+{
+  "displayName": "Sample MSI (thin stub)",
+  "publisher": "Example Corp",
+  "version": "1.0.0",
+  "presentation": "thinStub",
+  "termsAccepted": true,
+  "scope": "perUser",
+  "claims": {
+    "msi": true,
+    "paths": ["${ProgramFiles}/SampleApp/**"]
+  },
+  "steps": [
+    {
+      "kind": "msiexec",
+      "path": "C:/path/to/sample.msi",
+      "args": ["/passive", "/norestart"]
+    }
+  ],
+  "options": {
+    "installDir": "C:/Program Files/SampleApp",
+    "notes": "Queue-plane job only — serialized through the MSI lane. Pair with a UIL manifest when Ibex emits layout + coordinator together."
+  }
+}
