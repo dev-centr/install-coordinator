@@ -2,6 +2,9 @@
 
 == v0.1.0 (unreleased)
 
+* Unity Install Layout (UIL) v1.0: JSON schema, Antora reference, `installcoordinator.uil` library (parse, validate, classic-path plan, journal dry-run).
+* CLI: `uil validate`, `uil plan`, `uil emit-coordinator`; examples `uil-classic-demo.uil.json` and `thin-stub-msi.job.json`.
+* Linux/Posix: Unix socket client/server fixes for current Phobos (`Socket`, `getpid`).
 * Initial daemon, job state machine, MSI serialization lane, named-pipe IPC, HTTP API + web UI.
 * Two surfaces: local user app window (`/ui/user`) and admin remote control (`/ui/admin` + JSON API with Bearer auth when non-local).
 * Thin stub submit flow, session elevation lock, batch scope/terms, install history catalog.

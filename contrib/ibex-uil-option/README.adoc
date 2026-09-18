@@ -1,0 +1,35 @@
+= Ibex UIL / Install Coordinator option (contrib patch)
+
+Apply these files to link:https://github.com/dev-centr/ibex-install-builder[ibex-install-builder] when the upstream PR is not yet merged.
+
+== Files
+
+* `plugins/install_coordinator.d` — builtin plugins `uil` and `install-coordinator`
+* `docs/modules/ibex/pages/install-coordinator-uil.adoc` — how-to page
+
+== Manual steps
+
+1. Copy `plugins/install_coordinator.d` into the Ibex repo `plugins/` directory.
+2. Add to `source/app.d`: `import easyinstaller.plugins.install_coordinator;`
+3. Merge nav entry and plugins table row from the install-coordinator PR (or copy from `patches/` below).
+4. `dub build --config=application`
+
+== Patches
+
+[source,diff]
+----
+--- a/docs/modules/ibex/nav.adoc
++++ b/docs/modules/ibex/nav.adoc
+@@
+ * xref:plugins.adoc[Plugins]
++* xref:install-coordinator-uil.adoc[Install Coordinator / UIL]
+----
+
+[source,diff]
+----
+--- a/source/app.d
++++ b/source/app.d
+@@
+ import easyinstaller.plugins.appimage;
++import easyinstaller.plugins.install_coordinator;
+----

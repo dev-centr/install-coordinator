@@ -38,7 +38,17 @@ curl -H "Authorization: Bearer YOUR_SECRET" http://HOST:17420/jobs
 
 Package managers like UniGetUI can still install many apps; Install Coordinator helps when users double-click several EXE/MSI installers and hit error 1618. Desktop / Start Menu shortcuts work from the user UI or CLI.
 
+== Installer framework (UIL)
+
+Install Coordinator is documented as a **queue plane** plus the **Unity Install Layout (UIL)** contract for package roles, shell claims, and transaction journals. Start with xref:framework.adoc[Framework + UIL] and xref:uil-reference.adoc[UIL reference].
+
+[source,shell]
+----
+install-coordinator uil validate examples/uil-classic-demo.uil.json
+install-coordinator uil plan examples/uil-classic-demo.uil.json --dry-run
+----
+
 == Related
 
-* link:https://github.com/dev-centr/easy-installer[Ibex / Easy Installer] — project authoring and plugin emit
+* link:https://github.com/dev-centr/ibex-install-builder[Ibex install builder] — authoring; emit `uil` / `install-coordinator` targets
 * link:https://devcentr.org/news/2026-08-29-when-unrelated-installers-still-queue[Essay: When unrelated installers still queue]

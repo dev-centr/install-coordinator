@@ -1,0 +1,43 @@
+= Install Coordinator as installer framework
+:description: Queue plane plus Unity Install Layout (UIL) — how DevCentr packages install without fighting MSI global mutex.
+:navtitle: Framework
+
+Install Coordinator is two cooperating layers:
+
+* **Queue plane** — daemon, job state machine, MSI lane (`Global\_MSIExecute`), path-claim scheduling, user/admin surfaces.
+* **Layout contract (UIL)** — declarative package identity, payload roles, shell/discoverability claims, transaction journal, repair/uninstall semantics.
+
+Ibex (link:https://github.com/dev-centr/ibex-install-builder[ibex-install-builder]) authors projects; emit targets can produce UIL manifests and thin-stub coordinator jobs that hand work to the daemon.
+
+== Queue plane recap
+
+[source,shell]
+----
+install-coordinator daemon
+install-coordinator submit examples/thin-stub-msi.job.json
+install-coordinator gui
+----
+
+Jobs move `collecting` → `ready` → `queued` → `executing` → terminal states. MSI steps share one lane; disjoint path claims may run in parallel.
+
+== UIL layout plane
+
+UIL answers *where* payload lands on classic OS layouts today, and *what orientation claims* (PATH, Start Menu, associations, services, drivers, environment) must be refreshed so OpenShell-style discovery stays accurate.
+
+[source,shell]
+----
+install-coordinator uil validate examples/uil-classic-demo.uil.json
+install-coordinator uil plan examples/uil-classic-demo.uil.json --dry-run
+install-coordinator uil emit-coordinator examples/uil-classic-demo.uil.json dist/demo.job.json
+----
+
+The MVP apply engine validates, plans classic paths, and prints a forward/rollback journal (dry-run). File copy and claim application will wrap the same journal records used by MSI/exec steps on the queue plane.
+
+== Authoring flow (Ibex → Coordinator)
+
+. Ibex project selects plugin `install-coordinator` or `uil`.
+. Build emits `dist/<name>.uil.json` and optional `dist/<name>.coordinator.json`.
+. End user runs the stub (`install-coordinator submit …`) or an Ibex-produced launcher.
+. Coordinator queues work; UIL plan/journal runs inside exec steps as apply matures.
+
+See xref:uil-reference.adoc[UIL reference] for field-level detail and xref:connectome-fs.adoc[Connectome-fs mapping notes].

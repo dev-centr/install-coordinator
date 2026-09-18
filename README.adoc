@@ -1,10 +1,12 @@
 = Install Coordinator
 
-D daemon with **two surfaces**: a local lay-user app window and an admin remote-control HTTP API.
+D daemon with **two surfaces**: a local lay-user app window and an admin remote-control HTTP API. It is also a **installer framework option** for DevCentr: the queue plane serializes MSI work while **Unity Install Layout (UIL)** describes package roles, shell claims, and transaction journals for Ibex and other emitters.
 
 ## Why
 
 Windows blocks parallel MSI sessions via `_MSIExecute`. GUI users double-click installers and get error 1618. Install Coordinator collects jobs, explains waits, and runs MSI steps one at a time while allowing disjoint work in parallel when claims permit.
+
+UIL adds a layout contract so installs refresh PATH, shortcuts, and environment—not only copy files—on classic Windows/macOS/Linux/BSD paths today, with a forward mapping to connectome-fs.
 
 ## Surfaces
 
@@ -21,11 +23,14 @@ install-coordinator gui             # local user app window
 install-coordinator list active
 install-coordinator session --lock-elevation --batch-terms --scope=perMachine
 install-coordinator shortcut <id> --desktop
+install-coordinator uil validate examples/uil-classic-demo.uil.json
+install-coordinator uil plan examples/uil-classic-demo.uil.json --dry-run
+install-coordinator uil emit-coordinator examples/uil-classic-demo.uil.json
 ```
 
 Environment: `INSTALL_COORD_BIND`, `INSTALL_COORD_AUTH_TOKEN`, `INSTALL_COORD_REMOTE=1`, `INSTALL_COORD_HTTP_PORT`.
 
-## Manifest (minimal)
+## Manifest (queue plane, minimal)
 
 ```json
 {
@@ -40,11 +45,38 @@ Environment: `INSTALL_COORD_BIND`, `INSTALL_COORD_AUTH_TOKEN`, `INSTALL_COORD_RE
 }
 ```
 
+See `examples/thin-stub-msi.job.json` for a documented MSI stub sample.
+
+## UIL (layout contract)
+
+Ibex and other authors emit `*.uil.json` manifests (schema: `docs/schema/uil-manifest.schema.json`). The CLI validates, plans classic path mapping, and prints a transaction journal (dry-run MVP).
+
+```json
+{
+  "uilVersion": "1.0",
+  "package": { "id": "dev-centr.myapp", "name": "My App", "version": "1.0.0" },
+  "layout": { "adapter": "classic-paths", "scope": "perUser" },
+  "payload": {
+    "entries": [{ "source": "staging/bin/myapp", "role": "bin", "relativePath": "myapp" }]
+  },
+  "claims": [{ "type": "path_entry", "directories": ["${role:bin}"] }]
+}
+```
+
+Full reference: Antora pages under `docs/modules/ROOT/pages/` (`framework.adoc`, `uil-reference.adoc`).
+
+## Ibex integration
+
+Author installer projects with link:https://github.com/dev-centr/ibex-install-builder[ibex-install-builder]. Select plugin `uil` or `install-coordinator` to emit UIL manifests and coordinator job JSON into `dist/`. If your Ibex revision predates the plugin, copy the patch from `contrib/ibex-uil-option/`.
+
 ## Build
 
 ```powershell
 dub build --config=application
+dub test --config=library
 ```
+
+Library configuration exposes `installcoordinator.uil` for parse, validate, plan, and journal helpers.
 
 ## Docs
 

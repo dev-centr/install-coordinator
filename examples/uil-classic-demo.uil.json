@@ -1,0 +1,81 @@
+{
+  "uilVersion": "1.0",
+  "package": {
+    "id": "dev-centr.uil-demo",
+    "name": "UIL Classic Demo",
+    "publisher": "DevCentr",
+    "version": "1.2.0",
+    "edition": "default"
+  },
+  "layout": {
+    "adapter": "classic-paths",
+    "scope": "perUser",
+    "platformFamily": "auto",
+    "sideBySide": {
+      "enabled": true,
+      "slot": "1.2.0"
+    }
+  },
+  "payload": {
+    "entries": [
+      {
+        "source": "staging/bin/uil-demo",
+        "role": "bin",
+        "relativePath": "uil-demo"
+      },
+      {
+        "source": "staging/share/doc/README.txt",
+        "role": "share",
+        "relativePath": "doc/README.txt"
+      },
+      {
+        "source": "staging/state/installed.json",
+        "role": "state",
+        "relativePath": "installed.json"
+      }
+    ]
+  },
+  "claims": [
+    {
+      "type": "path_entry",
+      "id": "demo-bin",
+      "directories": ["${role:bin}"],
+      "prepend": true
+    },
+    {
+      "type": "start_menu",
+      "shortcut": {
+        "name": "UIL Demo",
+        "targetRole": "bin",
+        "targetRelative": "uil-demo"
+      }
+    },
+    {
+      "type": "env",
+      "id": "demo-home",
+      "scope": "user",
+      "variables": {
+        "UIL_DEMO_HOME": "${prefix}"
+      }
+    }
+  ],
+  "lifecycle": {
+    "repair": { "strategy": "reconcile-payload" },
+    "uninstall": {
+      "strategy": "remove-payload-and-claims",
+      "removeState": false,
+      "removeCache": true
+    }
+  },
+  "journal": {
+    "format": "uil-journal-v1",
+    "persistPath": "state/transactions/latest.json"
+  },
+  "coordinator": {
+    "presentation": "thinStub",
+    "termsAccepted": true,
+    "options": {
+      "ibexProject": "uil-classic-demo"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+= Install Coordinator and UIL emit
+:description: Emit Unity Install Layout manifests and coordinator job JSON from Ibex projects.
+:navtitle: Install Coordinator / UIL
+
+Ibex can target link:https://github.com/dev-centr/install-coordinator[Install Coordinator] as the delivery runtime: **UIL** describes layout and shell claims; the **coordinator job** hands work to the daemon queue plane.
+
+== Select the plugin
+
+In `installer.kdl`:
+
+[source,kdl]
+----
+installer {
+    name "MyApp"
+    version "1.0.0"
+    id "com.example.myapp"
+    plugin "uil"
+    add-to-path true
+    extras {
+        uilScope "perUser"
+        sideBySide "true"
+        emitCoordinatorJob "true"
+    }
+}
+----
+
+Plugin ids: `uil` (alias) or `install-coordinator`.
+
+== Build outputs
+
+[source,bash]
+----
+ibex build .
+----
+
+Writes under `dist/`:
+
+* `MyApp.uil.json` — UIL v1.0 manifest (`classic-paths` adapter)
+* `MyApp.coordinator.json` — thin-stub job referencing the UIL path (MVP: `uil plan --dry-run` exec step)
+
+Validate on a machine with Install Coordinator:
+
+[source,bash]
+----
+install-coordinator uil validate dist/MyApp.uil.json
+install-coordinator submit dist/MyApp.coordinator.json
+----
+
+== Contract reference
+
+UIL schema and Antora reference live in the Install Coordinator repo (`docs/schema/uil-manifest.schema.json`, `uil-reference.adoc`).

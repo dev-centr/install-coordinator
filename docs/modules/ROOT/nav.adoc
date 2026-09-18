@@ -1,1 +1,4 @@
 * xref:index.adoc[Overview]
+* xref:framework.adoc[Framework + UIL]
+* xref:uil-reference.adoc[UIL reference]
+* xref:connectome-fs.adoc[Connectome-fs mapping]

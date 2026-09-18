@@ -64,7 +64,7 @@ final class CoordinatorDaemon
         }
         else
         {
-            import std.process : getpid;
+            import core.sys.posix.unistd : getpid;
             write(daemonPidFile(), to!string(getpid()));
         }
     }
@@ -127,7 +127,7 @@ private int runUnixSocketServer()
     if (exists(sockPath))
         remove(sockPath);
     auto addr = new UnixAddress(sockPath);
-    auto listener = socket(PF_LOCAL, SocketType.STREAM, 0);
+    auto listener = new Socket(AddressFamily.UNIX, SocketType.STREAM);
     scope (exit) listener.close();
     listener.bind(addr);
     listener.listen(8);

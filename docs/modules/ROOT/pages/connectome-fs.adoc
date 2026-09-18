@@ -1,0 +1,30 @@
+= UIL on connectome-fs (adapter notes)
+:description: How UIL package identity, roles, and claims map to graph-native storage.
+:navtitle: Connectome-fs mapping
+
+Connectome-fs treats paths as views over GUID nodes with multi-names and association edges. UIL's `layout.adapter: connectome-fs` reserves the same JSON document shape as `classic-paths`; only resolution changes.
+
+== Node kinds (planned)
+
+[cols="1,2"]
+|===
+| UIL concept | Connectome node kind
+
+| `package.id` | `Package` node (stable GUID; human id as alias)
+| `package.edition` | `Edition` child of package
+| `layout.sideBySide.slot` | `VersionSlot` or edge label on `Edition`
+| Payload `source` | `PayloadBlob` (content-addressed) or `StagingRef`
+| Payload `role` | `RoleMount` edge to `Namespace` (`bin`, `lib`, …)
+| `claims[]` | `ClaimBinding` edges (`PathEntry`, `StartMenu`, …)
+| `journal` | `TransactionLog` node under state namespace
+|===
+
+== Associations
+
+* **Hierarchy view** — classic paths appear as one naming view; another view may expose the same `bin` executable under a Start Menu alias node.
+* **Claims** — `path_entry` binds a `Directory` node to the shell orientation graph (PATH refresh), matching OpenShell's discoverability goals.
+* **Repair** — `reconcile-payload` compares `PayloadBlob` hashes on associations; journal replay uses edge insert/delete instead of `copy`/`remove` file ops.
+
+== Runtime status
+
+Install Coordinator validates `connectome-fs` manifests but planning requires `classic-paths` until the connectome adapter ships. Ibex should still emit `classic-paths` for production targets.
