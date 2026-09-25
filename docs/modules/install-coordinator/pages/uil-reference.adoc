@@ -57,12 +57,12 @@ Installs must update discoverability, not only copy bytes:
 * `start_menu` — shortcut metadata pointing at a `bin` payload relative path.
 * `file_assoc` — extension ↔ handler binding.
 * `service` / `driver` — OS service or driver registration (planned apply).
-* `env` — user/machine/process environment variables (often referencing `${prefix}`).
+* `env` — user/machine/process environment variables (often referencing `$\{prefix}`).
 
 Token expansion in claim paths:
 
-* `${prefix}` / `${installRoot}` — resolved install prefix for the plan.
-* `${role:bin}` (and other roles) — resolved role root from the classic adapter.
+* `$\{prefix}` / `$\{installRoot}` — resolved install prefix for the plan.
+* `$\{role:bin}` (and other roles) — resolved role root from the classic adapter.
 
 == Side-by-side and editions
 
@@ -89,10 +89,22 @@ Journal records are ordered `mkdir`, `copy`, claim operations, with rollback cou
 
 == Classic path adapters
 
+[cols="1,2,2"]
+|===
 | OS family | per-user prefix (default) | per-machine prefix (default)
-| Windows | `%LOCALAPPDATA%\Programs\<id>\<slot>` | `%ProgramFiles%\<id>\<slot>`
-| macOS | `~/Applications/<id>/<slot>` | `/Library/Application Support/<id>/<slot>`
-| Linux / BSD | `~/.local/opt/<id>/<slot>` | `/opt/<id>/<slot>`
+
+| Windows
+| `%LOCALAPPDATA%\Programs\<id>\<slot>`
+| `%ProgramFiles%\<id>\<slot>`
+
+| macOS
+| `~/Applications/<id>/<slot>`
+| `/Library/Application Support/<id>/<slot>`
+
+| Linux / BSD
+| `~/.local/opt/<id>/<slot>`
+| `/opt/<id>/<slot>`
+|===
 
 Override any prefix with `layout.installRoot`.
 
