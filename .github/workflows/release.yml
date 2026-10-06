@@ -21,8 +21,8 @@ jobs:
             asset: install-coordinator-macos-amd64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dlang-community/setup-dlang@v1
+      - uses: actions/checkout@v7
+      - uses: dlang-community/setup-dlang@v2
         with:
           compiler: ldc-latest
       - run: dub build --config=application --build=release
@@ -39,7 +39,7 @@ jobs:
             cp -r assets dist/install-coordinator/ 2>/dev/null || true
             tar -czf ${{ matrix.asset }}.tar.gz -C dist install-coordinator
           fi
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: |
             ${{ matrix.asset }}.*
