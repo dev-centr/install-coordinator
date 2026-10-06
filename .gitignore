@@ -19,3 +19,5 @@
 !contrib/**
 !.github/
 !.github/**
+!/.editorconfig
+!/.gitattributes
