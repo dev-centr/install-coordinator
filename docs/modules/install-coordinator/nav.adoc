@@ -1,3 +1,4 @@
+.Install Coordinator
 * xref:index.adoc[Overview]
 * xref:framework.adoc[Framework + UIL]
 * xref:uil-reference.adoc[UIL reference]
