@@ -51,4 +51,4 @@ install-coordinator uil plan examples/uil-classic-demo.uil.json --dry-run
 == Related
 
 * link:https://github.com/dev-centr/ibex-install-builder[Ibex install builder] — authoring; emit `uil` / `install-coordinator` targets
-* link:https://devcentr.org/news/2026-08-29-when-unrelated-installers-still-queue[Essay: When unrelated installers still queue]
+* link:https://devcentr.org/blog/2026-08-29-why-do-installers-wait-in-line-a-design-failure-study[Essay: When unrelated installers still queue]

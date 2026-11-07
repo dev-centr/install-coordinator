@@ -1,5 +1,11 @@
 = Changelog
 
+== 2026-11-07
+
+=== Refresh documentation destinations
+
+* Update links to canonical folder URLs and the current news/blog article slugs. Replace retired references with available authoritative resources; private repositories remain explicitly access-controlled examples.
+
 == v0.1.0 (unreleased)
 
 * Unity Install Layout (UIL) v1.0: JSON schema, Antora reference, `installcoordinator.uil` library (parse, validate, classic-path plan, journal dry-run).
